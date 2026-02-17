@@ -1,0 +1,426 @@
+{
+  "name": "Desafio-Tempo",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6bded99e-8d99-4394-aaaa-717dad577a23",
+              "name": "queue",
+              "value": "={{ $json.message.text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -768,
+        -304
+      ],
+      "id": "1660139e-0071-4cb6-bde7-fcfb65468885",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -912,
+        -304
+      ],
+      "id": "418dd118-2f40-4072-99c1-d063a87867f6",
+      "name": "Telegram Trigger",
+      "webhookId": "6f315b50-8e77-4f10-8aa8-abd120d42b72",
+      "credentials": {
+        "telegramApi": {
+          "id": "Qmw0M4NVlabx6Vo4",
+          "name": "TELEGRAM_TOKEN"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.openweathermap.org/data/2.5/weather",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpQueryAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $json.queue }}"
+            },
+            {
+              "name": "units",
+              "value": "Metric"
+            },
+            {
+              "name": "lang",
+              "value": "pt_br"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -192,
+        -304
+      ],
+      "id": "ef0d1ac4-d19d-4f24-b62c-2d5bcf0de968",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "ea0Bg69Fs583IFv5",
+          "name": "Bearer Auth account"
+        },
+        "httpQueryAuth": {
+          "id": "27ieyY3rTJ9Ae1xK",
+          "name": "OPENWEATHER_API_KEY"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Quero que receba a mensagem {{ $json.queue }} e baseada nela, devolva somente o nome da cidade, o código da UF e o país no seguinte formato, sem identificadores. \"CIDADE,UF,PAIS\" retirando qualquer acentuação. Se não encontrar uma cidade com a grafia informada, retorne \"Cidade não encontrada!\"",
+        "needsFallback": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -624,
+        -320
+      ],
+      "id": "a2289bd0-a6d1-418d-be38-2f9c7aa9f432",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {
+          "temperature": 0.2
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -512,
+        -16
+      ],
+      "id": "ab11ee9c-2f44-4bf8-b56d-ce4e7ef95b73",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "r7lwxinznobBwIvP",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1e3253a-f35f-4bce-b2de-db4e3e209672",
+              "name": "queue",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -336,
+        -304
+      ],
+      "id": "2435bf86-a92d-4dc9-8a89-c83c4e1eb4f4",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "936b0c37-a020-4297-a6ef-3da747f38b51",
+              "leftValue": "={{ $json.name }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "cd3e5c69-b1ed-4f71-8931-6f6bbab231c7",
+              "leftValue": "={{ $json.error.status }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        16,
+        -304
+      ],
+      "id": "f75103d4-9ee0-4df6-a131-b181c9864edd",
+      "name": "If",
+      "notes": "{\"Erro\": \"Cidade não encontrada!\"}"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Extraia as informações  {{ $json.name }}, {{ $json.main.temp }} e retorne uma mensagem amigável falando o nome da cidade e a temperatura no momento, sempre arrendodando o valor da temperatura no formato 30°C.",
+        "needsFallback": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        224,
+        -336
+      ],
+      "id": "05c1c82d-f363-4eb3-afcd-ee5ca465bf55",
+      "name": "AI Agent1"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').item.json.message.chat.id }}",
+        "text": "={{ $json.output }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        576,
+        -336
+      ],
+      "id": "0e4de236-ac1d-4e77-9d8e-dfcdcd2befff",
+      "name": "Send a text message",
+      "webhookId": "9b42bf43-dc2c-4b6d-924a-8f890b62fb75",
+      "credentials": {
+        "telegramApi": {
+          "id": "Qmw0M4NVlabx6Vo4",
+          "name": "TELEGRAM_TOKEN"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dfe2f4c1-7d86-4a3d-b063-b6241e948967",
+              "name": "output",
+              "value": "\"Olá, cidade não encontrada!! Informe uma cidade, e estado válido! EX: Porto Alegre, RS\"",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        320,
+        -80
+      ],
+      "id": "a8551c26-dc01-4d30-ab64-3ea35057cf8d",
+      "name": "RetornoErro"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -240,
+        -16
+      ],
+      "id": "649e0ab1-08fb-4a40-86b2-f660020b9418",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "9XpFwtEX1la7fWG4",
+          "name": "OpenAi account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "RetornoErro",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent1": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RetornoErro": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 1
+          },
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 1
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "15f571a5-18ec-4bd0-ba35-692ba5a466e6",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "5bc2e65b3c82776d488371953564ad1eac854e9fa220ef59e511abf448d7759f"
+  },
+  "id": "Ckqc43KtFKZP5xxR",
+  "tags": []
+}

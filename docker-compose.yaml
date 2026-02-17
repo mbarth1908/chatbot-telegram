@@ -1,0 +1,99 @@
+services:
+  n8n:
+    image: n8nio/n8n:1.122.4
+    ports:
+      - 5678:5678
+    volumes:
+      - ./n8n-data:/home/node/.n8n
+    environment:
+      - GENERIC_TIMEZONE=America/Sao_Paulo
+      - TZ=America/Sao_Paulo
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=true
+      - N8N_GIT_NODE_DISABLE_BARE_REPOS=true
+      # Queue mode
+      - EXECUTIONS_MODE=queue
+      #POSTGRES
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_DATABASE=postgres
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_USER=postgres
+      - DB_POSTGRESDB_PASSWORD=postgres
+      # REDIS
+      - QUEUE_BULL_REDIS_HOST=redis
+      - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true
+      - WEBHOOK_URL=https://drake-nonrefractive-joyfully.ngrok-free.dev
+    networks:
+      - n8n
+
+  n8n-worker:
+    image: n8nio/n8n:1.122.4
+    command: worker
+    ports:
+      - 5679:5678
+    volumes:
+      - ./n8n-data:/home/node/.n8n
+    environment:
+      - GENERIC_TIMEZONE=America/Sao_Paulo
+      - TZ=America/Sao_Paulo
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=true
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=true
+      - N8N_GIT_NODE_DISABLE_BARE_REPOS=true
+      # Queue mode
+      - EXECUTIONS_MODE=queue
+      #POSTGRES
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_DATABASE=postgres
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_USER=postgres
+      - DB_POSTGRESDB_PASSWORD=postgres
+      # REDIS
+      - QUEUE_BULL_REDIS_HOST=redis
+      - OFFLOAD_MANUAL_EXECUTIONS_TO_WORKERS=true
+      - WEBHOOK_URL=https://drake-nonrefractive-joyfully.ngrok-free.dev
+    networks:
+      - n8n
+  postgres:
+    image: ankane/pgvector
+    ports:
+      - 5432:5432
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    networks:
+      - n8n
+
+  redis:
+    image: redis:alpine
+    ports:
+      - 6379:6379
+    networks:
+      - n8n
+    volumes:
+      - ./redis-data:/data
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    ports: 
+      - 4040:4040
+    volumes: 
+      - ./ngrok.yml:/etc/ngrok.yml
+    command: http --domain=drake-nonrefractive-joyfully.ngrok-free.dev n8n:5678
+    environment:
+      - NGROK_AUTHTOKEN=38GN0zUiBkv1L7XJu1FxrpyUeD6_6SHLhAE3MsrEmdPqRzFNN
+    restart: always
+    networks:
+      - n8n
+    depends_on:
+      - n8n
+
+networks:
+  n8n:
+    driver: bridge
