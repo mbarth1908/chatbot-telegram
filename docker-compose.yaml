@@ -87,7 +87,7 @@ services:
       - ./ngrok.yml:/etc/ngrok.yml
     command: http --domain=drake-nonrefractive-joyfully.ngrok-free.dev n8n:5678
     environment:
-      - NGROK_AUTHTOKEN=38GN0zUiBkv1L7XJu1FxrpyUeD6_6SHLhAE3MsrEmdPqRzFNN
+      - NGROK_AUTHTOKEN=<token>
     restart: always
     networks:
       - n8n
